@@ -100,7 +100,7 @@ class TestLoadConfig:
 
         assert cfg.providers["deepseek"].base_url is None
 
-    def test_provider_type_defaults_to_openai(self, tmp_path) -> None:
+    def test_provider_type_defaults_to_provider_name(self, tmp_path) -> None:
         config_path = tmp_path / "config.toml"
         config_path.write_text(
             'default_provider = "deepseek"\n\n'
@@ -110,7 +110,7 @@ class TestLoadConfig:
         )
 
         cfg = load_config(config_path)
-        assert cfg.providers["deepseek"].provider_type == "openai"
+        assert cfg.providers["deepseek"].provider_type == "deepseek"
 
     def test_provider_type_can_be_gemini(self, tmp_path) -> None:
         config_path = tmp_path / "config.toml"

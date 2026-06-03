@@ -6,6 +6,7 @@ import json
 
 from google import genai
 from google.genai import types
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from dtrans.models import TranslationResult
 from dtrans.providers.base import BaseProvider
@@ -20,7 +21,13 @@ class GeminiProvider(BaseProvider):
         self.api_key = api_key
         self.model = model
         self.system_prompt = system_prompt
-        self.client = genai.Client(api_key=api_key)
+        self.client = genai.Client(
+            api_key=api_key,
+            http_options=types.HttpOptions(
+                timeout=30000,  # 30 seconds (milliseconds)
+                client_args={"http2": False},
+            ),
+        )
 
     def _build_config(self) -> types.GenerateContentConfig:
         """Build generation config with JSON schema enforcement."""
@@ -60,6 +67,22 @@ class GeminiProvider(BaseProvider):
             response_schema=schema,
         )
 
+    @retry(
+        retry=retry_if_exception_type(Exception),
+        stop=stop_after_attempt(4),  # 1 initial + 3 retries
+        wait=wait_exponential(multiplier=1, min=1, max=4),  # 1s -> 2s -> 4s
+        reraise=True,
+    )
+    def _generate_content(
+        self, prompt: str, config: types.GenerateContentConfig
+    ) -> types.GenerateContentResponse:
+        """Call the Gemini API with transient-error retries."""
+        return self.client.models.generate_content(
+            model=self.model,
+            contents=prompt,
+            config=config,
+        )
+
     def translate(
         self,
         text: str,
@@ -72,11 +95,7 @@ class GeminiProvider(BaseProvider):
         prompt = f"Translate the following text {source_desc} {target_desc}:\n\n{text}"
 
         try:
-            response = self.client.models.generate_content(
-                model=self.model,
-                contents=prompt,
-                config=self._build_config(),
-            )
+            response = self._generate_content(prompt, self._build_config())
         except Exception as exc:
             raise RuntimeError(f"Translation request failed: {exc}") from exc
 
@@ -101,11 +120,7 @@ class GeminiProvider(BaseProvider):
         )
 
         try:
-            response = self.client.models.generate_content(
-                model=self.model,
-                contents=prompt,
-                config=config,
-            )
+            response = self._generate_content(prompt, config)
         except Exception as exc:
             raise RuntimeError(f"Identification request failed: {exc}") from exc
 

@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 
 import click
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, model_validator
 
 DEFAULT_CONFIG_PATHS = [
     Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "dtrans" / "config.toml",
@@ -42,6 +42,17 @@ class Config(BaseModel):
 
     default_provider: str = Field(description="Name of the default provider to use.")
     providers: dict[str, ProviderConfig] = Field(description="Map of provider name to config.")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _infer_provider_types(cls, values: dict) -> dict:
+        """Default provider_type to the config key name when omitted."""
+        providers = values.get("providers")
+        if isinstance(providers, dict):
+            for name, cfg in providers.items():
+                if isinstance(cfg, dict) and "provider_type" not in cfg:
+                    cfg["provider_type"] = name
+        return values
 
 
 def find_config_file() -> Path | None:
