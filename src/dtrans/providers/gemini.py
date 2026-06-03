@@ -113,7 +113,7 @@ class GeminiProvider(BaseProvider):
             raise RuntimeError("Gemini returned empty content.")
 
         parsed = json.loads(response.text)
-        lang = parsed.get("language", "").lower()
+        lang = str(parsed.get("language", "")).lower()
         if not lang:
             raise RuntimeError("Gemini did not return a language code.")
         return lang

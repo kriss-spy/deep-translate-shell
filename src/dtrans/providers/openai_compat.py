@@ -39,12 +39,12 @@ class OpenAICompatibleProvider(BaseProvider):
     )
     def _chat_completion(self, messages: list[dict[str, str]]) -> str:
         """Send a chat completion request and return the assistant's content."""
-        response = self.client.chat.completions.create(
+        response = self.client.chat.completions.create(  # type: ignore[call-overload]
             model=self.model,
-            messages=messages,  # type: ignore[arg-type]
+            messages=messages,
             response_format={"type": "json_object"},
         )
-        content = response.choices[0].message.content
+        content: str | None = response.choices[0].message.content
         if content is None:
             raise RuntimeError("LLM returned empty content.")
         return content
@@ -148,7 +148,7 @@ class OpenAICompatibleProvider(BaseProvider):
                 "Please check your model and system prompt configuration."
             ) from exc
 
-        lang = parsed.get("language", "").lower()
+        lang = str(parsed.get("language", "")).lower()
         if not lang:
             raise RuntimeError("LLM did not return a language code.")
         return lang
