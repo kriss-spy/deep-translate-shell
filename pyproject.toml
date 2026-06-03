@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dtrans"
-version = "1.0.1"
+version = "1.0.2"
 description = "A modern command-line translator powered by LLMs"
 readme = "README.md"
 license = { text = "MIT" }

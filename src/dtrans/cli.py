@@ -7,6 +7,7 @@ import sys
 import click
 from rich.console import Console
 
+from dtrans import __version__
 from dtrans.config import ConfigError, load_config
 from dtrans.core import Translator
 from dtrans.lang import get_default_target, parse_lang_spec
@@ -75,7 +76,7 @@ def _parse_args(text_args: tuple[str, ...]) -> tuple[str | None, str | None, str
     is_flag=True,
     help="Identify the source language and exit.",
 )
-@click.version_option(version="0.1.0", prog_name="dtrans")
+@click.version_option(version=__version__, prog_name="dtrans")
 @click.pass_context
 def main(
     ctx: click.Context,
