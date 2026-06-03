@@ -1,8 +1,12 @@
 # dtrans
 
+[![PyPI version](https://img.shields.io/pypi/v/dtrans.svg)](https://pypi.org/project/dtrans/)
+
 A modern command-line translator powered by LLMs.
 
 > **Note:** This is a ground-up rewrite of [translate-shell](https://github.com/soimort/translate-shell) with a focus on LLM-based translation and a significantly improved CLI experience.
+
+<img width="2743" height="871" alt="image" src="https://github.com/user-attachments/assets/d9720c09-accb-4503-a563-b9040ebb456c" />
 
 ## Features
 
