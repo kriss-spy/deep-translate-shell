@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from unittest.mock import patch
 
 from click.testing import CliRunner
@@ -36,18 +35,28 @@ def _make_result(translation: str = "Bonjour") -> TranslationResult:
 class TestCliBasic:
     def test_translates_and_prints_text(self) -> None:
         runner = CliRunner()
-        with patch("dtrans.cli.load_config", return_value=_make_config()):
-            with patch("dtrans.providers.openai_compat.OpenAICompatibleProvider.translate", return_value=_make_result("Bonjour")):
-                result = runner.invoke(main, ["Hello"])
+        with (
+            patch("dtrans.cli.load_config", return_value=_make_config()),
+            patch(
+                "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
+                return_value=_make_result("Bonjour"),
+            ),
+        ):
+            result = runner.invoke(main, ["Hello"])
 
         assert result.exit_code == 0
         assert "Bonjour" in result.output
 
     def test_brief_mode_prints_only_translation(self) -> None:
         runner = CliRunner()
-        with patch("dtrans.cli.load_config", return_value=_make_config()):
-            with patch("dtrans.providers.openai_compat.OpenAICompatibleProvider.translate", return_value=_make_result("Hola")):
-                result = runner.invoke(main, ["--brief", "Hello"])
+        with (
+            patch("dtrans.cli.load_config", return_value=_make_config()),
+            patch(
+                "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
+                return_value=_make_result("Hola"),
+            ),
+        ):
+            result = runner.invoke(main, ["--brief", "Hello"])
 
         assert result.exit_code == 0
         assert result.output.strip() == "Hola"
@@ -58,10 +67,15 @@ class TestCliBasic:
     def test_non_tty_stdout_auto_brief(self) -> None:
         """When stdout is not a TTY, output should be plain text only."""
         runner = CliRunner()
-        with patch("dtrans.cli.load_config", return_value=_make_config()):
-            with patch("dtrans.providers.openai_compat.OpenAICompatibleProvider.translate", return_value=_make_result("Ciao")):
-                # CliRunner already simulates a non-TTY stdout
-                result = runner.invoke(main, ["Hello"])
+        with (
+            patch("dtrans.cli.load_config", return_value=_make_config()),
+            patch(
+                "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
+                return_value=_make_result("Ciao"),
+            ),
+        ):
+            # CliRunner already simulates a non-TTY stdout
+            result = runner.invoke(main, ["Hello"])
 
         assert result.exit_code == 0
         assert result.output.strip() == "Ciao"
@@ -194,23 +208,21 @@ class TestCliExitCodes:
     def test_network_error_exits_with_code_3(self) -> None:
         """API/network failure should exit with code 3."""
         runner = CliRunner()
-        with patch("dtrans.cli.load_config", return_value=_make_config()):
-            with patch(
-                "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
-                side_effect=RuntimeError("Connection refused"),
-            ):
-                result = runner.invoke(main, ["hello"])
+        with patch("dtrans.cli.load_config", return_value=_make_config()), patch(
+            "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
+            side_effect=RuntimeError("Connection refused"),
+        ):
+            result = runner.invoke(main, ["hello"])
 
         assert result.exit_code == 3
 
     def test_success_exits_with_code_0(self) -> None:
         runner = CliRunner()
-        with patch("dtrans.cli.load_config", return_value=_make_config()):
-            with patch(
-                "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
-                return_value=_make_result("hi"),
-            ):
-                result = runner.invoke(main, ["hello"])
+        with patch("dtrans.cli.load_config", return_value=_make_config()), patch(
+            "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
+            return_value=_make_result("hi"),
+        ):
+            result = runner.invoke(main, ["hello"])
 
         assert result.exit_code == 0
 
@@ -219,15 +231,14 @@ class TestCliErrorMessages:
     def test_missing_api_key_shows_friendly_error(self) -> None:
         """Authentication error should suggest checking the config file."""
         runner = CliRunner()
-        with patch("dtrans.cli.load_config", return_value=_make_config()):
-            with patch(
-                "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
-                side_effect=RuntimeError(
-                    "Authentication failed: Incorrect API key provided. "
-                    "Please check your API key in ~/.config/dtrans/config.toml"
-                ),
-            ):
-                result = runner.invoke(main, ["hello"])
+        with patch("dtrans.cli.load_config", return_value=_make_config()), patch(
+            "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
+            side_effect=RuntimeError(
+                "Authentication failed: Incorrect API key provided. "
+                "Please check your API key in ~/.config/dtrans/config.toml"
+            ),
+        ):
+            result = runner.invoke(main, ["hello"])
 
         assert result.exit_code == 3
         assert "api key" in result.output.lower() or "config" in result.output.lower()
@@ -235,30 +246,32 @@ class TestCliErrorMessages:
     def test_invalid_json_shows_friendly_error(self) -> None:
         """Invalid JSON from LLM should suggest checking model/system prompt."""
         runner = CliRunner()
-        with patch("dtrans.cli.load_config", return_value=_make_config()):
-            with patch(
-                "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
-                side_effect=RuntimeError(
-                    "Invalid JSON response from the model. "
-                    "Please check your model and system prompt configuration."
-                ),
-            ):
-                result = runner.invoke(main, ["hello"])
+        with patch("dtrans.cli.load_config", return_value=_make_config()), patch(
+            "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
+            side_effect=RuntimeError(
+                "Invalid JSON response from the model. "
+                "Please check your model and system prompt configuration."
+            ),
+        ):
+            result = runner.invoke(main, ["hello"])
 
         assert result.exit_code == 3
-        assert "json" in result.output.lower() or "model" in result.output.lower() or "prompt" in result.output.lower()
+        assert (
+            "json" in result.output.lower()
+            or "model" in result.output.lower()
+            or "prompt" in result.output.lower()
+        )
 
     def test_rate_limit_shows_friendly_error(self) -> None:
         """Rate limit error should be clearly communicated."""
         runner = CliRunner()
-        with patch("dtrans.cli.load_config", return_value=_make_config()):
-            with patch(
-                "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
-                side_effect=RuntimeError(
-                    "Rate limit exceeded. Please wait a moment and try again."
-                ),
-            ):
-                result = runner.invoke(main, ["hello"])
+        with patch("dtrans.cli.load_config", return_value=_make_config()), patch(
+            "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
+            side_effect=RuntimeError(
+                "Rate limit exceeded. Please wait a moment and try again."
+            ),
+        ):
+            result = runner.invoke(main, ["hello"])
 
         assert result.exit_code == 3
         assert "rate" in result.output.lower() or "limit" in result.output.lower()
@@ -266,12 +279,11 @@ class TestCliErrorMessages:
     def test_network_failure_shows_retry_count(self) -> None:
         """Network failure after retries should mention retry count."""
         runner = CliRunner()
-        with patch("dtrans.cli.load_config", return_value=_make_config()):
-            with patch(
-                "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
-                side_effect=RuntimeError("Failed after 3 retries"),
-            ):
-                result = runner.invoke(main, ["hello"])
+        with patch("dtrans.cli.load_config", return_value=_make_config()), patch(
+            "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
+            side_effect=RuntimeError("Failed after 3 retries"),
+        ):
+            result = runner.invoke(main, ["hello"])
 
         assert result.exit_code == 3
         # The error message should mention retries in some form
@@ -298,12 +310,11 @@ class TestCliIdentify:
     def test_identify_prints_iso_code(self) -> None:
         """dtrans --identify '手紙' prints 'ja' and exits 0."""
         runner = CliRunner()
-        with patch("dtrans.cli.load_config", return_value=_make_config()):
-            with patch(
-                "dtrans.providers.openai_compat.OpenAICompatibleProvider.identify",
-                return_value="ja",
-            ):
-                result = runner.invoke(main, ["--identify", "手紙"])
+        with patch("dtrans.cli.load_config", return_value=_make_config()), patch(
+            "dtrans.providers.openai_compat.OpenAICompatibleProvider.identify",
+            return_value="ja",
+        ):
+            result = runner.invoke(main, ["--identify", "手紙"])
 
         assert result.exit_code == 0
         assert result.output.strip() == "ja"
@@ -311,12 +322,11 @@ class TestCliIdentify:
     def test_identify_brief_pipe_aware(self) -> None:
         """Identify output should be plain text only, suitable for piping."""
         runner = CliRunner()
-        with patch("dtrans.cli.load_config", return_value=_make_config()):
-            with patch(
-                "dtrans.providers.openai_compat.OpenAICompatibleProvider.identify",
-                return_value="zh",
-            ):
-                result = runner.invoke(main, ["--identify", "你好"])
+        with patch("dtrans.cli.load_config", return_value=_make_config()), patch(
+            "dtrans.providers.openai_compat.OpenAICompatibleProvider.identify",
+            return_value="zh",
+        ):
+            result = runner.invoke(main, ["--identify", "你好"])
 
         assert result.exit_code == 0
         assert result.output.strip() == "zh"
@@ -359,12 +369,11 @@ class TestCliVerbose:
     def test_verbose_renders_translation_panel(self) -> None:
         """--verbose shows translation and phonetics in a panel."""
         runner = CliRunner()
-        with patch("dtrans.cli.load_config", return_value=_make_config()):
-            with patch(
-                "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
-                return_value=self._make_verbose_result(),
-            ):
-                result = runner.invoke(main, ["--verbose", "run"])
+        with patch("dtrans.cli.load_config", return_value=_make_config()), patch(
+            "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
+            return_value=self._make_verbose_result(),
+        ):
+            result = runner.invoke(main, ["--verbose", "run"])
 
         assert result.exit_code == 0
         assert "courir" in result.output
@@ -373,12 +382,11 @@ class TestCliVerbose:
     def test_verbose_renders_alternatives_table(self) -> None:
         """--verbose shows alternatives with text, note, and comparison."""
         runner = CliRunner()
-        with patch("dtrans.cli.load_config", return_value=_make_config()):
-            with patch(
-                "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
-                return_value=self._make_verbose_result(),
-            ):
-                result = runner.invoke(main, ["--verbose", "run"])
+        with patch("dtrans.cli.load_config", return_value=_make_config()), patch(
+            "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
+            return_value=self._make_verbose_result(),
+        ):
+            result = runner.invoke(main, ["--verbose", "run"])
 
         assert result.exit_code == 0
         assert "se précipiter" in result.output
@@ -390,12 +398,11 @@ class TestCliVerbose:
     def test_verbose_renders_examples_table(self) -> None:
         """--verbose shows examples with source, target, and context."""
         runner = CliRunner()
-        with patch("dtrans.cli.load_config", return_value=_make_config()):
-            with patch(
-                "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
-                return_value=self._make_verbose_result(),
-            ):
-                result = runner.invoke(main, ["--verbose", "run"])
+        with patch("dtrans.cli.load_config", return_value=_make_config()), patch(
+            "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
+            return_value=self._make_verbose_result(),
+        ):
+            result = runner.invoke(main, ["--verbose", "run"])
 
         assert result.exit_code == 0
         assert "I run every morning." in result.output
@@ -408,12 +415,11 @@ class TestCliVerbose:
     def test_verbose_renders_footer_language_pair(self) -> None:
         """--verbose footer shows detected source -> target language."""
         runner = CliRunner()
-        with patch("dtrans.cli.load_config", return_value=_make_config()):
-            with patch(
-                "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
-                return_value=self._make_verbose_result(),
-            ):
-                result = runner.invoke(main, ["--verbose", "--to", "fr", "run"])
+        with patch("dtrans.cli.load_config", return_value=_make_config()), patch(
+            "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
+            return_value=self._make_verbose_result(),
+        ):
+            result = runner.invoke(main, ["--verbose", "--to", "fr", "run"])
 
         assert result.exit_code == 0
         assert "en" in result.output
@@ -422,13 +428,11 @@ class TestCliVerbose:
     def test_tty_defaults_to_verbose(self) -> None:
         """When stdout is a TTY, default mode is verbose."""
         runner = CliRunner()
-        with patch("dtrans.cli.load_config", return_value=_make_config()):
-            with patch(
-                "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
-                return_value=self._make_verbose_result(),
-            ):
-                with patch("dtrans.cli._is_tty", return_value=True):
-                    result = runner.invoke(main, ["run"])
+        with patch("dtrans.cli.load_config", return_value=_make_config()), patch(
+            "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
+            return_value=self._make_verbose_result(),
+        ), patch("dtrans.cli._is_tty", return_value=True):
+            result = runner.invoke(main, ["run"])
 
         assert result.exit_code == 0
         assert "courir" in result.output
@@ -439,12 +443,11 @@ class TestCliVerbose:
     def test_pipe_still_yields_brief(self) -> None:
         """Piping stdout still auto-switches to brief (non-TTY)."""
         runner = CliRunner()
-        with patch("dtrans.cli.load_config", return_value=_make_config()):
-            with patch(
-                "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
-                return_value=self._make_verbose_result(),
-            ):
-                result = runner.invoke(main, ["run"])
+        with patch("dtrans.cli.load_config", return_value=_make_config()), patch(
+            "dtrans.providers.openai_compat.OpenAICompatibleProvider.translate",
+            return_value=self._make_verbose_result(),
+        ):
+            result = runner.invoke(main, ["run"])
 
         assert result.exit_code == 0
         assert result.output.strip() == "courir"

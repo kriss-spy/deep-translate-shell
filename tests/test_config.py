@@ -27,7 +27,11 @@ class TestLoadConfig:
 
     def test_raises_friendly_error_when_default_provider_missing(self, tmp_path) -> None:
         config_path = tmp_path / "config.toml"
-        config_path.write_text('[providers.deepseek]\napi_key = "sk-xxx"\nmodel = "deepseek-chat"\n')
+        config_path.write_text(
+            '[providers.deepseek]\n'
+            'api_key = "sk-xxx"\n'
+            'model = "deepseek-chat"\n'
+        )
 
         with pytest.raises(ConfigError) as exc_info:
             load_config(config_path)
