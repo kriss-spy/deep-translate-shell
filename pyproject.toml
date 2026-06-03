@@ -1,0 +1,68 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dtrans"
+version = "1.0.0"
+description = "A modern command-line translator powered by LLMs"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "kriss-spy" },
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Utilities",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "click>=8.0",
+    "rich>=13.0",
+    "pydantic>=2.0",
+    "httpx>=0.27",
+    "openai>=1.0",
+    "google-genai>=0.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.23",
+    "respx>=0.20",
+    "ruff>=0.6",
+    "mypy>=1.0",
+]
+
+[project.scripts]
+dtrans = "dtrans.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/kriss-spy/deep-translate-shell"
+Repository = "https://github.com/kriss-spy/deep-translate-shell"
+Issues = "https://github.com/kriss-spy/deep-translate-shell/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dtrans"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B", "C4", "SIM"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true

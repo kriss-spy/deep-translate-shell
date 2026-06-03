@@ -1,6 +1,0 @@
-@include "include/Translators/GoogleTranslate.awk"
-@include "include/Translators/BingTranslator.awk"
-@include "include/Translators/YandexTranslate.awk"
-@include "include/Translators/Apertium.awk"
-@include "include/Translators/SpellChecker.awk"
-@include "include/Translators/Auto.awk"

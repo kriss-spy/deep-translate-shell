@@ -3,23 +3,38 @@ name: CI
 on:
   push:
     branches:
-    - develop
-    - stable
+      - main
+      - develop
   pull_request:
     branches:
-    - develop
+      - main
+      - develop
 
 jobs:
-  build:
-
+  test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get -y install gawk curl rlwrap emacs
-    - name: Sanity check
-      run: |
-        make test
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Lint with ruff
+        run: ruff check src tests
+
+      - name: Type check with mypy
+        run: mypy src
+
+      - name: Test with pytest
+        run: pytest tests/ -v
