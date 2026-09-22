@@ -5,6 +5,7 @@ from __future__ import annotations
 from dtrans.config import Config, ProviderConfig
 from dtrans.models import TranslationResult
 from dtrans.prompts import DEFAULT_SYSTEM_PROMPT
+from dtrans.providers.chatgpt import ChatGPTProvider
 from dtrans.providers.gemini import GeminiProvider
 from dtrans.providers.openai_compat import OpenAICompatibleProvider
 
@@ -25,9 +26,17 @@ class Translator:
         self.provider = self._build_provider(provider_cfg)
 
     @staticmethod
-    def _build_provider(cfg: ProviderConfig) -> OpenAICompatibleProvider | GeminiProvider:
+    def _build_provider(
+        cfg: ProviderConfig,
+    ) -> OpenAICompatibleProvider | GeminiProvider | ChatGPTProvider:
         """Instantiate the appropriate provider for the given config."""
         system_prompt = cfg.system_prompt or DEFAULT_SYSTEM_PROMPT
+
+        if cfg.provider_type == "chatgpt":
+            return ChatGPTProvider(model=cfg.model, system_prompt=system_prompt)
+
+        if cfg.api_key is None or cfg.model is None:
+            raise ValueError("API providers require both api_key and model.")
 
         if cfg.provider_type == "gemini":
             return GeminiProvider(

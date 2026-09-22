@@ -10,7 +10,7 @@ A modern command-line translator powered by LLMs.
 
 ## Features
 
-- **LLM-powered translation** via DeepSeek, Gemini, ChatGPT, or any OpenAI-compatible API
+- **LLM-powered translation** via DeepSeek, Gemini, a ChatGPT subscription, or any OpenAI-compatible API
 - **Verify your translations** with alternatives, comparisons, and contextual examples
 - **Rich terminal UI** with beautiful panels, tables, and spinners
 - **Modern CLI** with explicit long-form flags and intuitive language syntax
@@ -46,6 +46,24 @@ model = "gpt-4o"
 [providers.gemini]
 api_key = "..."
 model = "gemini-1.5-flash"
+
+[providers.chatgpt]
+provider_type = "chatgpt"
+# Optional: omit model to use the Codex default available to your subscription.
+# model = "your-codex-model"
+```
+
+To use the `chatgpt` provider, install the
+[Codex CLI](https://developers.openai.com/codex/cli/) and sign in through its supported browser
+flow. `dtrans` delegates authentication and token refresh to Codex and never reads its cached
+credentials:
+
+```bash
+dtrans-auth login
+dtrans-auth status
+
+# For remote or headless systems
+dtrans-auth login --device-auth
 ```
 
 2. Translate:

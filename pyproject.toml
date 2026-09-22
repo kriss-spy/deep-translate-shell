@@ -46,6 +46,7 @@ dev = [
 
 [project.scripts]
 dtrans = "dtrans.cli:main"
+dtrans-auth = "dtrans.auth:main"
 
 [project.urls]
 Homepage = "https://github.com/kriss-spy/deep-translate-shell"

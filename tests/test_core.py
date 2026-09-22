@@ -7,6 +7,7 @@ from unittest.mock import patch
 from dtrans.config import Config, ProviderConfig
 from dtrans.core import Translator
 from dtrans.models import TranslationResult
+from dtrans.providers.chatgpt import ChatGPTProvider
 from dtrans.providers.gemini import GeminiProvider
 from dtrans.providers.openai_compat import OpenAICompatibleProvider
 
@@ -47,6 +48,18 @@ class TestProviderDispatch:
         cfg = _make_config(provider_type="gemini")
         translator = Translator(cfg)
         assert isinstance(translator.provider, GeminiProvider)
+
+    def test_builds_chatgpt_subscription_provider_without_api_key(self) -> None:
+        cfg = Config(
+            default_provider="chatgpt",
+            providers={
+                "chatgpt": ProviderConfig(provider_type="chatgpt"),
+            },
+        )
+
+        translator = Translator(cfg)
+
+        assert isinstance(translator.provider, ChatGPTProvider)
 
     def test_uses_custom_system_prompt_when_set(self) -> None:
         custom_prompt = "You are a pirate translator."

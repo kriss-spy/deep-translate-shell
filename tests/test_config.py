@@ -125,6 +125,19 @@ class TestLoadConfig:
         cfg = load_config(config_path)
         assert cfg.providers["gemini"].provider_type == "gemini"
 
+    def test_chatgpt_provider_does_not_require_api_credentials(self, tmp_path) -> None:
+        config_path = tmp_path / "config.toml"
+        config_path.write_text(
+            'default_provider = "chatgpt"\n\n'
+            '[providers.chatgpt]\n'
+            'provider_type = "chatgpt"\n'
+        )
+
+        cfg = load_config(config_path)
+
+        assert cfg.providers["chatgpt"].api_key is None
+        assert cfg.providers["chatgpt"].model is None
+
     def test_system_prompt_is_optional(self, tmp_path) -> None:
         config_path = tmp_path / "config.toml"
         config_path.write_text(

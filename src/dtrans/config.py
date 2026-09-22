@@ -25,17 +25,30 @@ class ConfigError(click.ClickException):
 class ProviderConfig(BaseModel):
     """Configuration for a single LLM provider."""
 
-    api_key: str = Field(description="API key for the provider.")
-    model: str = Field(description="Model name to use for translation.")
+    api_key: str | None = Field(default=None, description="API key for the provider.")
+    model: str | None = Field(default=None, description="Model name to use for translation.")
     base_url: str | None = Field(default=None, description="Custom base URL for the API.")
     provider_type: str = Field(
         default="openai",
-        description="Provider SDK type: 'openai' or 'gemini'.",
+        description=(
+            "Provider SDK type: 'gemini' or 'chatgpt'; all other values use the "
+            "OpenAI-compatible API."
+        ),
     )
     system_prompt: str | None = Field(
         default=None,
         description="Custom system prompt for this provider.",
     )
+
+    @model_validator(mode="after")
+    def _require_api_credentials(self) -> ProviderConfig:
+        """Require API credentials unless ChatGPT subscription auth is used."""
+        if self.provider_type != "chatgpt":
+            if not self.api_key:
+                raise ValueError("api_key is required for API providers")
+            if not self.model:
+                raise ValueError("model is required for API providers")
+        return self
 
 
 class Config(BaseModel):
