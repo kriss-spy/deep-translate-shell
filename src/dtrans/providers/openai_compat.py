@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+from urllib.parse import urlparse
+from uuid import uuid4
 
 from openai import (
     APIConnectionError,
@@ -15,6 +17,7 @@ from openai import (
 from pydantic import ValidationError
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
+from dtrans import __version__
 from dtrans.models import TranslationResult
 from dtrans.providers.base import BaseProvider
 
@@ -29,7 +32,18 @@ class OpenAICompatibleProvider(BaseProvider):
         self.base_url = base_url
         self.model = model
         self.system_prompt = system_prompt
-        self.client = OpenAI(api_key=api_key, base_url=base_url, max_retries=0)
+        hostname = urlparse(base_url).hostname if base_url else None
+        self._is_opencode = hostname == "opencode.ai" or bool(
+            hostname and hostname.endswith(".opencode.ai")
+        )
+        self.client = OpenAI(
+            api_key=api_key,
+            base_url=base_url,
+            max_retries=0,
+            default_headers={"User-Agent": f"dtrans/{__version__}"}
+            if self._is_opencode
+            else None,
+        )
 
     @retry(
         retry=retry_if_exception_type((APIConnectionError, InternalServerError, RateLimitError)),
@@ -37,12 +51,17 @@ class OpenAICompatibleProvider(BaseProvider):
         wait=wait_exponential(multiplier=1, min=1, max=4),  # 1s -> 2s -> 4s
         reraise=True,
     )
-    def _chat_completion(self, messages: list[dict[str, str]]) -> str:
+    def _chat_completion(
+        self,
+        messages: list[dict[str, str]],
+        session_id: str | None = None,
+    ) -> str:
         """Send a chat completion request and return the assistant's content."""
         response = self.client.chat.completions.create(  # type: ignore[call-overload]
             model=self.model,
             messages=messages,
             response_format={"type": "json_object"},
+            extra_headers={"x-opencode-session": session_id} if session_id else None,
         )
         content: str | None = response.choices[0].message.content
         if content is None:
@@ -109,7 +128,8 @@ class OpenAICompatibleProvider(BaseProvider):
         ]
 
         try:
-            raw_json = self._chat_completion(messages)
+            session_id = str(uuid4()) if self._is_opencode else None
+            raw_json = self._chat_completion(messages, session_id=session_id)
         except Exception as exc:
             raise self._handle_api_error(exc) from exc
 
@@ -136,7 +156,8 @@ class OpenAICompatibleProvider(BaseProvider):
         ]
 
         try:
-            raw_json = self._chat_completion(messages)
+            session_id = str(uuid4()) if self._is_opencode else None
+            raw_json = self._chat_completion(messages, session_id=session_id)
         except Exception as exc:
             raise self._handle_api_error(exc) from exc
 

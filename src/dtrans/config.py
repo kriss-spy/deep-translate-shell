@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Any
 
 import click
 from pydantic import BaseModel, Field, ValidationError, model_validator
@@ -45,7 +46,7 @@ class Config(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def _infer_provider_types(cls, values: dict) -> dict:
+    def _infer_provider_types(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Default provider_type to the config key name when omitted."""
         providers = values.get("providers")
         if isinstance(providers, dict):

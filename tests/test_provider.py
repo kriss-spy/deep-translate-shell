@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from uuid import UUID
 
 import pytest
 import respx
@@ -10,6 +11,59 @@ from httpx import Response
 
 from dtrans.models import TranslationResult
 from dtrans.providers.openai_compat import OpenAICompatibleProvider
+
+
+@respx.mock
+def test_translate_identifies_client_and_conversation_to_opencode() -> None:
+    """Requests include the routing metadata required by OpenCode Go."""
+    captured_headers = []
+
+    def capture_request(request):
+        captured_headers.append(request.headers)
+        return Response(
+            200,
+            json={
+                "id": "chatcmpl-test",
+                "object": "chat.completion",
+                "created": 1,
+                "model": "glm-5.3-flash",
+                "choices": [
+                    {
+                        "index": 0,
+                        "message": {
+                            "role": "assistant",
+                            "content": json.dumps({
+                                "translation": "余子式",
+                                "alternatives": [],
+                                "examples": [],
+                                "detected_source_language": "zh",
+                                "translation_phonetics": "",
+                            }),
+                        },
+                        "finish_reason": "stop",
+                    }
+                ],
+                "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
+            },
+        )
+
+    respx.post("https://opencode.ai/zen/go/v1/chat/completions").mock(
+        side_effect=capture_request
+    )
+    provider = OpenAICompatibleProvider(
+        api_key="sk-test",
+        base_url="https://opencode.ai/zen/go/v1",
+        model="glm-5.3-flash",
+        system_prompt="You are a translator.",
+    )
+
+    provider.translate("余子式", source_lang="zh", target_lang="en")
+    provider.translate("代数余子式", source_lang="zh", target_lang="en")
+
+    session_ids = [headers["x-opencode-session"] for headers in captured_headers]
+    assert len(set(session_ids)) == 2
+    assert all(UUID(session_id) for session_id in session_ids)
+    assert all(headers["user-agent"].startswith("dtrans/") for headers in captured_headers)
 
 
 @respx.mock
@@ -57,12 +111,13 @@ def test_translate_returns_translation_result() -> None:
     assert result.translation == "Bonjour"
     assert result.detected_source_language == "en"
     assert route.called
+    assert "x-opencode-session" not in route.calls[0].request.headers
 
 
 @respx.mock
 def test_translate_retries_on_transient_errors() -> None:
     """Retry logic: max 3 retries with exponential backoff on 502 errors."""
-    route = respx.post("https://api.example.com/v1/chat/completions").mock(
+    route = respx.post("https://opencode.ai/zen/go/v1/chat/completions").mock(
         side_effect=[
             Response(502, text="Bad Gateway"),
             Response(502, text="Bad Gateway"),
@@ -98,8 +153,8 @@ def test_translate_retries_on_transient_errors() -> None:
 
     provider = OpenAICompatibleProvider(
         api_key="sk-test",
-        base_url="https://api.example.com/v1",
-        model="gpt-4",
+        base_url="https://opencode.ai/zen/go/v1",
+        model="glm-5.3-flash",
         system_prompt="You are a translator.",
     )
 
@@ -107,6 +162,11 @@ def test_translate_retries_on_transient_errors() -> None:
 
     assert result.translation == "Hola"
     assert route.call_count == 4  # 1 initial + 3 retries
+    session_ids = {
+        call.request.headers["x-opencode-session"] for call in route.calls
+    }
+    assert len(session_ids) == 1
+    UUID(session_ids.pop())
 
 
 @respx.mock
