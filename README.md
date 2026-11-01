@@ -37,6 +37,7 @@ default_provider = "deepseek"
 
 [providers.deepseek]
 api_key = "sk-..."
+base_url = "https://api.deepseek.com"
 model = "deepseek-flash"
 
 [providers.openai]
