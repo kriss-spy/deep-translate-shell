@@ -37,21 +37,28 @@ default_provider = "deepseek"
 
 [providers.deepseek]
 api_key = "sk-..."
-model = "deepseek-chat"
+base_url = "https://api.deepseek.com"
+model = "deepseek-flash"
 
 [providers.openai]
 api_key = "sk-..."
-model = "gpt-4o"
+model = "gpt-6-luna"
 
 [providers.gemini]
 api_key = "..."
-model = "gemini-1.5-flash"
+model = "gemini-3.8-flash"
 
 [providers.chatgpt]
 provider_type = "chatgpt"
 # Optional: omit model to use the Codex default available to your subscription.
 # model = "your-codex-model"
 ```
+
+These example models are listed in the providers' current documentation:
+[DeepSeek](https://api-docs.deepseek.com/),
+[OpenAI](https://developers.openai.com/api/docs/models/gpt-6-luna), and
+[Gemini](https://ai.google.dev/gemini-api/docs/models).
+Check these lists if a provider retires a model or restricts access to it.
 
 To use the `chatgpt` provider, install the
 [Codex CLI](https://developers.openai.com/codex/cli/) and sign in through its supported browser
